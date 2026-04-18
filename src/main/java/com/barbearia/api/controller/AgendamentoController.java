@@ -4,11 +4,9 @@ import com.barbearia.api.model.Agendamento;
 import com.barbearia.api.service.AgendamentoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -25,6 +23,16 @@ public class AgendamentoController {
 
     public List<Agendamento> Listar(){
         return service.listarTodos();
+    }
+
+    @GetMapping("/data/{data}")
+    public List<Agendamento> listarPorData(@PathVariable LocalDate data){
+        return service.buscarPorData(data);
+    }
+
+    @GetMapping("/barabeiro/{id}")
+    public List<Agendamento> listarPorBarbeiro(@PathVariable Long id){
+        return service.buscarPorBarbeiro(id);
     }
 
 }

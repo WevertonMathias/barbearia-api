@@ -9,7 +9,9 @@ import com.barbearia.api.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AgendamentoService {
@@ -25,19 +27,32 @@ public class AgendamentoService {
 
     // Método para salvar (Criação e atualização)
     public Agendamento salvar(Agendamento agendamento) {
-        // 1. Valida se o cliente existe no banco
+
+        // 1. Validção de Data (Não permite agendar no passado.)
+        if(agendamento.getData().isBefore(LocalDate.now())){
+            throw new RuntimeException("Não é possivel agendar para uma data passada.");
+        }
+
+        // 2. Busca e validação do Barbeiro e Cliente
         Cliente cliente = clienteRepository.findById(agendamento.getCliente().getId())
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com o ID: " + agendamento.getCliente().getId()));
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado."));
 
-        // 2. Valida se o barbeiro existe no banco
         Barbeiro barbeiro = barbeiroRepository.findById(agendamento.getBarbeiro().getId())
-                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado com o ID: " + agendamento.getBarbeiro().getId()));
+                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado."));
 
-        // 3. Atribui os objetos recuperados do banco ao agendamento
+        // 3. Validação de Conflito: O barbeiro já está ocupado?
+        Optional<Agendamento> conflito = repository.findByBarbeiroAndDataAndHoraInicio(
+                barbeiro, agendamento.getData(), agendamento.getHoraInicio()
+        );
+
+        if(conflito.isPresent()){
+            throw new RuntimeException("Este barbeiro já possui um agendamento neste horario!.");
+        }
+
+        // 4. Preenche os objetos e salva
         agendamento.setCliente(cliente);
         agendamento.setBarbeiro(barbeiro);
 
-        // 4. Salva no banco de dados
         return repository.save(agendamento);
     }
 
@@ -55,5 +70,13 @@ public class AgendamentoService {
     // Método para deletar
     public void deletar(Long id) {
         repository.deleteById(id);
+    }
+
+     public List<Agendamento> buscarPorData(LocalDate data){
+        return repository.findByData(data);
+    }
+
+    public List<Agendamento> buscarPorBarbeiro(Long barbeiroId){
+        return repository.findByBarbeiroId(barbeiroId);
     }
 }
