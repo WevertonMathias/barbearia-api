@@ -32,5 +32,8 @@ public class Agendamento {
     @Column(name = "hora_fim")
     private LocalTime horaFim;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private StatusAgendamento status;
+
+    private Double valorServico;
 }
