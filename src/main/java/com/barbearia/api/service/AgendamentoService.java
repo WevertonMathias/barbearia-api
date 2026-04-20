@@ -1,8 +1,10 @@
 package com.barbearia.api.service;
 
+import com.barbearia.api.dto.RelatorioComissaoDTO;
 import com.barbearia.api.model.Agendamento;
 import com.barbearia.api.model.Barbeiro;
 import com.barbearia.api.model.Cliente;
+import com.barbearia.api.model.StatusAgendamento;
 import com.barbearia.api.repository.AgendamentoRepository;
 import com.barbearia.api.repository.BarbeiroRepository;
 import com.barbearia.api.repository.ClienteRepository;
@@ -53,6 +55,8 @@ public class AgendamentoService {
         agendamento.setCliente(cliente);
         agendamento.setBarbeiro(barbeiro);
 
+        agendamento.setStatus(StatusAgendamento.AGENDADO);
+
         return repository.save(agendamento);
     }
 
@@ -78,5 +82,35 @@ public class AgendamentoService {
 
     public List<Agendamento> buscarPorBarbeiro(Long barbeiroId){
         return repository.findByBarbeiroId(barbeiroId);
+    }
+
+    public Agendamento concluiragendamento(Long id){
+        Agendamento agendamento = repository.findById(id)
+                .orElseThrow(()-> new RuntimeException("Agendamento não encontrado."));
+
+        agendamento.setStatus(StatusAgendamento.COMCLUIDO);
+
+        return repository.save(agendamento);
+    }
+
+    public List<Agendamento> buscarConcluidosPorData(LocalDate data){
+        return repository.findByStatusAndData(StatusAgendamento.COMCLUIDO, data);
+    }
+
+    public Double calcularComissaoTotal(List<Agendamento> concluidos){
+        return concluidos.stream()
+                .mapToDouble(a -> a.getValorServico() * (a.getBarbeiro().getPercentualComissao() / 100))
+                .sum();
+    }
+
+    public RelatorioComissaoDTO gerarRelatorioPorData(LocalDate data){
+        List<Agendamento> concluidos = repository.findByStatusAndData(StatusAgendamento.COMCLUIDO, data);
+
+        Double faturamento = concluidos.stream().mapToDouble(Agendamento ::getValorServico).sum();
+
+        Double comissao = concluidos.stream().mapToDouble(a -> a.getValorServico() * (a.getBarbeiro().getPercentualComissao() / 100))
+                .sum();
+
+        return new RelatorioComissaoDTO(faturamento, comissao,concluidos.size());
     }
 }

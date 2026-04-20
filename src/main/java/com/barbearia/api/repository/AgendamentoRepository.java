@@ -2,6 +2,7 @@ package com.barbearia.api.repository;
 
 import com.barbearia.api.model.Agendamento;
 import com.barbearia.api.model.Barbeiro;
+import com.barbearia.api.model.StatusAgendamento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +18,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findByData(LocalDate date);
 
     List<Agendamento> findByBarbeiroId(Long barbeiroId);
+
+    List<Agendamento> findByStatusAndData(StatusAgendamento status, LocalDate data);
 }
