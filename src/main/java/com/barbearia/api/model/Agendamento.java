@@ -2,6 +2,8 @@ package com.barbearia.api.model;
 
 import jakarta.persistence.*;
 import lombok.Data; // Se estiver usando Lombok
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -35,5 +37,6 @@ public class Agendamento {
     @Enumerated(EnumType.STRING)
     private StatusAgendamento status;
 
-    private Double valorServico;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal valorServico;
 }

@@ -11,6 +11,8 @@ import com.barbearia.api.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +33,7 @@ public class AgendamentoService {
     public Agendamento salvar(Agendamento agendamento) {
 
         // 1. Validção de Data (Não permite agendar no passado.)
-        if(agendamento.getData().isBefore(LocalDate.now())){
+        if (agendamento.getData().isBefore(LocalDate.now())) {
             throw new RuntimeException("Não é possivel agendar para uma data passada.");
         }
 
@@ -47,7 +49,7 @@ public class AgendamentoService {
                 barbeiro, agendamento.getData(), agendamento.getHoraInicio()
         );
 
-        if(conflito.isPresent()){
+        if (conflito.isPresent()) {
             throw new RuntimeException("Este barbeiro já possui um agendamento neste horario!.");
         }
 
@@ -76,41 +78,58 @@ public class AgendamentoService {
         repository.deleteById(id);
     }
 
-     public List<Agendamento> buscarPorData(LocalDate data){
+    public List<Agendamento> buscarPorData(LocalDate data) {
         return repository.findByData(data);
     }
 
-    public List<Agendamento> buscarPorBarbeiro(Long barbeiroId){
+    public List<Agendamento> buscarPorBarbeiro(Long barbeiroId) {
         return repository.findByBarbeiroId(barbeiroId);
     }
 
-    public Agendamento concluiragendamento(Long id){
+    public Agendamento concluiragendamento(Long id) {
         Agendamento agendamento = repository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Agendamento não encontrado."));
+                .orElseThrow(() -> new RuntimeException("Agendamento não encontrado."));
 
         agendamento.setStatus(StatusAgendamento.COMCLUIDO);
 
         return repository.save(agendamento);
     }
 
-    public List<Agendamento> buscarConcluidosPorData(LocalDate data){
+    public List<Agendamento> buscarConcluidosPorData(LocalDate data) {
         return repository.findByStatusAndData(StatusAgendamento.COMCLUIDO, data);
     }
 
-    public Double calcularComissaoTotal(List<Agendamento> concluidos){
+    public BigDecimal calcularComissaoTotal(List<Agendamento> concluidos) {
         return concluidos.stream()
-                .mapToDouble(a -> a.getValorServico() * (a.getBarbeiro().getPercentualComissao() / 100))
-                .sum();
+                .map(a -> {
+                    BigDecimal valor = a.getValorServico();
+                    BigDecimal percentual = BigDecimal.valueOf(a.getBarbeiro().getPercentualComissao());
+
+                    // Cálculo: (Valor * Percentual) / 100
+                    return valor.multiply(percentual)
+                            .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // Soma todos os resultados
     }
 
-    public RelatorioComissaoDTO gerarRelatorioPorData(LocalDate data){
-        List<Agendamento> concluidos = repository.findByStatusAndData(StatusAgendamento.COMCLUIDO, data);
+    public RelatorioComissaoDTO gerarRelatorioPorData(LocalDate data) {
+        List<Agendamento> concluidos = repository.findByStatusAndData(StatusAgendamento.CONCLUIDO, data);
 
-        Double faturamento = concluidos.stream().mapToDouble(Agendamento ::getValorServico).sum();
+        // Soma o faturamento bruto
+        BigDecimal faturamento = concluidos.stream()
+                .map(Agendamento::getValorServico)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Double comissao = concluidos.stream().mapToDouble(a -> a.getValorServico() * (a.getBarbeiro().getPercentualComissao() / 100))
-                .sum();
+        // Calcula a comissão total
+        BigDecimal comissao = concluidos.stream()
+                .map(a -> {
+                    BigDecimal valor = a.getValorServico();
+                    BigDecimal percentual = BigDecimal.valueOf(a.getBarbeiro().getPercentualComissao());
+                    // Valor * (Percentual / 100)
+                    return valor.multiply(percentual).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new RelatorioComissaoDTO(faturamento, comissao,concluidos.size());
+        return new RelatorioComissaoDTO(faturamento, comissao, concluidos.size());
     }
 }
