@@ -1,24 +1,58 @@
 package com.barbearia.api.service;
 
+import com.barbearia.api.dto.request.ClienteRequestDTO;
+import com.barbearia.api.dto.response.ClienteResponseDTO;
+import com.barbearia.api.infra.VerificarSeEmailExisteException;
 import com.barbearia.api.model.Cliente;
 import com.barbearia.api.repository.ClienteRepository;
+import com.barbearia.api.service.validador.ClienteServiceValidador;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class ClienteService {
 
-    @Autowired
-    private ClienteRepository repository;
+    private final ClienteRepository repository;
+    private final ClienteServiceValidador validador;
 
     public List<Cliente> listarTodos(){
         return repository.findAll();
     }
 
-    public Cliente salvarNovo(Cliente cliente){
-        return repository.save(cliente);
+    @Transactional
+    public ClienteResponseDTO salvarNovo(ClienteRequestDTO clienteRequestDto){
+
+        validador.verificarSeEmailExiste(clienteRequestDto.email());
+
+        Cliente cliente = new Cliente();
+        cliente.setNome(clienteRequestDto.nome());
+        cliente.setTelefone(clienteRequestDto.telefone());
+        cliente.setEmail(clienteRequestDto.email());
+        cliente.setDataNascimento(clienteRequestDto.dataNascimento());
+        cliente.setObservacoes(clienteRequestDto.observacoes());
+
+        try{
+            repository.save(cliente);
+            return new ClienteResponseDTO(
+                    cliente.getId(),
+                    cliente.getNome(),
+                    cliente.getTelefone(),
+                    cliente.getEmail(),
+                    cliente.getDataNascimento(),
+                    cliente.getObservacoes(),
+                    cliente.getCriadoEm()
+            );
+
+        }catch (DataIntegrityViolationException e){
+            throw new VerificarSeEmailExisteException();
+        }
     }
 
     public Cliente atualizar(Long id, Cliente dadosAtualizados){
