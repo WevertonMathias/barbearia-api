@@ -20,4 +20,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findByBarbeiroId(Long barbeiroId);
 
     List<Agendamento> findByStatusAndData(StatusAgendamento status, LocalDate data);
+
+    boolean existsByBarbeiroIdAndDataAndHoraInicio(Long barbeiroId, LocalDate data, LocalTime horaInicio );
 }

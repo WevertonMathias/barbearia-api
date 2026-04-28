@@ -1,5 +1,6 @@
 package com.barbearia.api.service;
 
+import com.barbearia.api.dto.AgendamentoResponseDTO;
 import com.barbearia.api.dto.RelatorioComissaoDTO;
 import com.barbearia.api.model.Agendamento;
 import com.barbearia.api.model.Barbeiro;
@@ -61,12 +62,7 @@ public class AgendamentoService {
 
         return repository.save(agendamento);
     }
-
-    // Método para listar todos os agendamentos
-    public List<Agendamento> listarTodos() {
-        return repository.findAll();
-    }
-
+    
     // Método para buscar por ID
     public Agendamento buscarPorId(Long id) {
         return repository.findById(id)
@@ -131,5 +127,55 @@ public class AgendamentoService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new RelatorioComissaoDTO(faturamento, comissao, concluidos.size());
+    }
+
+    public AgendamentoResponseDTO agendar(Agendamento agendamento){
+        // 1. Busca os dados reais no banco usando os IDs que vieram no JSON
+        var cliente = clienteRepository.findById(agendamento.getCliente().getId())
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+
+        var barbeiro = barbeiroRepository.findById(agendamento.getBarbeiro().getId())
+                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado!"));
+
+        // 2. "Recheia" o agendamento com os objetos completos (agora eles têm nomes!)
+        agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
+
+        boolean ocupado = repository.existsByBarbeiroIdAndDataAndHoraInicio(
+                agendamento.getBarbeiro().getId(),
+                agendamento.getData(),
+                agendamento.getHoraInicio()
+        );
+
+        if (ocupado){
+            throw new RuntimeException("Este barbeiro já possui um agendamento neste horario!");
+        }
+
+        agendamento.setStatus(StatusAgendamento.AGENDADO);
+        Agendamento salvo = repository.save(agendamento);
+
+        return new AgendamentoResponseDTO(
+                salvo.getId(),
+                salvo.getCliente().getNome(),
+                salvo.getBarbeiro().getNome(),
+                salvo.getData(),
+                salvo.getHoraInicio(),
+                salvo.getValorServico(),
+                salvo.getStatus()
+        );
+
+    }
+    public List<AgendamentoResponseDTO> listarTodos() {
+        return repository.findAll().stream()
+                .map(salvo -> new AgendamentoResponseDTO(
+                        salvo.getId(),
+                        salvo.getCliente() != null ? salvo.getCliente().getNome() : "Sem Cliente",
+                        salvo.getBarbeiro() != null ? salvo.getBarbeiro().getNome() : "Sem Barbeiro",
+                        salvo.getData(),
+                        salvo.getHoraInicio(),
+                        salvo.getValorServico(),
+                        salvo.getStatus()
+                ))
+                .toList();
     }
 }
