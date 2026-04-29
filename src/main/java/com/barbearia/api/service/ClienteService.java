@@ -5,6 +5,7 @@ import com.barbearia.api.dto.ClienteResponseDTO;
 import com.barbearia.api.dto.ClienteUpdateDTO;
 import com.barbearia.api.model.Cliente;
 import com.barbearia.api.repository.ClienteRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,7 @@ public class ClienteService {
 
     public ClienteResponseDTO buscarPorId(Long id){
        Cliente cliente = repository.findById(id)
-               .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID " + id));
+               .orElseThrow(EntityNotFoundException::new);
 
        return new ClienteResponseDTO(
                cliente.getId(),

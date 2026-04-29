@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 
 @Entity
-@Table(name = "cliente")
+@Table(name = "clientes")
 @Data // O Lombok já cria Getter, Setter, toString, etc.
 @NoArgsConstructor
 @AllArgsConstructor

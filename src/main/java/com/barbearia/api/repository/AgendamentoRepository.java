@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
-    Optional<Agendamento> findByBarbeiroAndDataAndHoraInicio(Barbeiro barbeiro, LocalDate date, LocalTime horarioInicico);
+    boolean existsByBarbeiroIdAndDataAndHoraInicio(Long barbeiroId, LocalDate data, LocalTime horaInicio);
 
     List<Agendamento> findByData(LocalDate date);
 
@@ -21,5 +21,4 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
 
     List<Agendamento> findByStatusAndData(StatusAgendamento status, LocalDate data);
 
-    boolean existsByBarbeiroIdAndDataAndHoraInicio(Long barbeiroId, LocalDate data, LocalTime horaInicio );
 }

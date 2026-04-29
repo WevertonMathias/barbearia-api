@@ -1,14 +1,13 @@
 package com.barbearia.api.controller;
 
+import com.barbearia.api.dto.AgendamentoRequestDTO;
 import com.barbearia.api.dto.AgendamentoResponseDTO;
 import com.barbearia.api.dto.RelatorioComissaoDTO;
-import com.barbearia.api.model.Agendamento;
 import com.barbearia.api.service.AgendamentoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -16,47 +15,35 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/agendamentos")
+@RequiredArgsConstructor
 public class AgendamentoController {
 
-    @Autowired
-    private AgendamentoService service;
+    private final AgendamentoService service;
+
+    @PostMapping
+    public ResponseEntity<AgendamentoResponseDTO> agendar(@RequestBody @Valid AgendamentoRequestDTO dados) {
+        return ResponseEntity.ok(service.agendar(dados));
+    }
 
     @GetMapping
     public ResponseEntity<List<AgendamentoResponseDTO>> listar() {
-        List<AgendamentoResponseDTO> lista = service.listarTodos();
-        return ResponseEntity.ok(lista);
+        return ResponseEntity.ok(service.listarTodos());
     }
 
-    @GetMapping("/data/{data}")
-    public List<Agendamento> listarPorData(@PathVariable LocalDate data){
-        return service.buscarPorData(data);
+    @PatchMapping("/{id}/concluir")
+    public ResponseEntity<AgendamentoResponseDTO> concluir(@PathVariable Long id) {
+        return ResponseEntity.ok(service.concluirAgendamento(id));
     }
 
-    @GetMapping("/barabeiro/{id}")
-    public List<Agendamento> listarPorBarbeiro(@PathVariable Long id){
-        return service.buscarPorBarbeiro(id);
+    @GetMapping("/relatorio")
+    public ResponseEntity<RelatorioComissaoDTO> relatorio(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return ResponseEntity.ok(service.gerarRelatorioDeComissaoPorData(data));
     }
 
-    @PutMapping("/{id}/concluir")
-    public Agendamento cocluir(@PathVariable Long id){
-        return service.concluiragendamento(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        service.deletar(id);
+        return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/concluidos")
-    public List<Agendamento> listarConcluidos(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data){
-        return service.buscarConcluidosPorData(data);
-    }
-
-    @GetMapping("/relatorio-financeiro")
-    public RelatorioComissaoDTO obterRelatorio(@RequestParam @DateTimeFormat (iso = DateTimeFormat.ISO.DATE) LocalDate data){
-        return service.gerarRelatorioPorData(data);
-    }
-
-    @PostMapping
-    public ResponseEntity<AgendamentoResponseDTO> criarAgendamento(@RequestBody Agendamento agendamento){
-        AgendamentoResponseDTO response = service.agendar(agendamento);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
 }

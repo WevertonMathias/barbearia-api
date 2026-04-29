@@ -21,4 +21,12 @@ public class Barbeiro {
 
     @Column(name = "criado_em", insertable = false, updatable = false)
     private java.time.LocalDateTime criadoEm;
+
+    @PrePersist
+    public void prePersist() {
+        this.criadoEm = java.time.LocalDateTime.now();
+        if (this.ativo == null) {
+            this.ativo = true;
+        }
+    }
 }

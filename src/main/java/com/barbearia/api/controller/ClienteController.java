@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/cliente")
+@RequestMapping("/clientes")
 @RequiredArgsConstructor // Injeção de dependência moderna pelo construtor
 public class ClienteController {
 

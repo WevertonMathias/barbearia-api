@@ -1,13 +1,17 @@
 package com.barbearia.api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "servico")
-@Data
+@Table(name = "servicos")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Servico {
 
     @Id
@@ -20,8 +24,17 @@ public class Servico {
     private String descricao;
 
     @Column(nullable = false)
-    private Double preco;
+    private BigDecimal preco;
 
     @Column(name = "tempo_estimado")
     private Integer tempoEstimado;
+
+    @Column(name = "criado_at")
+    private LocalDateTime criadoAt;
+
+    @PrePersist
+    public void prePersist(){
+        this.criadoAt = LocalDateTime.now();
+    }
+
 }

@@ -1,39 +1,56 @@
 package com.barbearia.api.service;
 
+import com.barbearia.api.dto.ServicoResponseDTO;
 import com.barbearia.api.model.Servico;
 import com.barbearia.api.repository.ServicoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ServicoService {
 
-    @Autowired
-    private ServicoRepository repository;
+    private final ServicoRepository repository;
 
-    public List<Servico> listarTodos() {
-        return repository.findAll();
+    @Transactional
+    public ServicoResponseDTO salvar(ServicoResponseDTO dados) {
+        var servico = new Servico();
+        servico.setNome(dados.nome());
+        servico.setDescricao(dados.descricao());
+        servico.setPreco(dados.preco());
+        servico.setTempoEstimado(dados.tempoEstimado());
+
+        repository.save(servico);
+
+        return new ServicoResponseDTO(servico);
     }
 
-    public Servico salvar(Servico servico) {
-        return repository.save(servico);
+    public List<ServicoResponseDTO> listarTodos() {
+        return repository.findAll().stream()
+                .map(ServicoResponseDTO::new).toList();
     }
 
-    public Servico atualizar(Long id, Servico dadosNovos) {
-        Servico servicoExistente = repository.findById(id)
+    @Transactional
+    public ServicoResponseDTO atualizar(Long id, ServicoResponseDTO dados) {
+         var servico = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Serviço não encontrado!"));
 
-        servicoExistente.setNome(dadosNovos.getNome());
-        servicoExistente.setDescricao(dadosNovos.getDescricao());
-        servicoExistente.setPreco(dadosNovos.getPreco());
-        servicoExistente.setTempoEstimado(dadosNovos.getTempoEstimado());
+        servico.setNome(dados.nome());
+        servico.setDescricao(dados.descricao());
+        servico.setPreco(dados.preco());
+        servico.setTempoEstimado(dados.tempoEstimado());
 
-        return repository.save(servicoExistente);
+        return new ServicoResponseDTO(servico);
     }
 
-    public void deletar(Long id) {
+    @Transactional
+    public void excluir(Long id) {
+        if (!repository.existsById(id)){
+            throw new RuntimeException("Serviço não encontrado!");
+        }
         repository.deleteById(id);
     }
 }
